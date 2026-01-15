@@ -1,0 +1,10 @@
+name = "realizability"
+version = "0.1.0"
+defaultTargets = ["realizability"]
+
+[[lean_lib]]
+name = "Realizability"
+
+[[lean_exe]]
+name = "realizability"
+root = "Main"
