@@ -1,13 +1,9 @@
 name = "realizability"
 version = "0.1.0"
-defaultTargets = ["realizability"]
+defaultTargets = ["Realizability"]
 
 [[lean_lib]]
 name = "Realizability"
-
-[[lean_exe]]
-name = "realizability"
-root = "Main"
 
 [[require]]
 name = "mathlib"
