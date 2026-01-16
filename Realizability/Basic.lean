@@ -30,10 +30,23 @@ lemma semicomputable_id : Semicomputable (PFun.id A) := by
 lemma computable_id : Computable (id : A → A) := by
   exact semicomputable_id
 
+lemma const_is_rec (n : ℕ) : Nat.Partrec fun _ => n := by
+  induction n with
+  | zero => apply Nat.Partrec.zero
+  | succ n ind =>
+    have : (fun _ : ℕ ↦ .some (n + 1)) = PFun.comp (Nat.succ : ℕ →. ℕ) (fun x ↦ .some n) := by
+      ext n1 n2
+      simp only [Part.mem_some_iff, PFun.comp_apply, Part.bind_some, PFun.coe_val,
+        Nat.succ_eq_add_one]
+    simp only [Part.coe_some, this]
+    apply Nat.Partrec.comp
+    · apply Nat.Partrec.succ
+    · apply ind
+
 lemma semicomputable_const (x : B) : Semicomputable fun _ : A ↦ .some x := by
   use fun _ ↦ Encodable.encode x
   · simp only [Part.coe_some]
-    sorry
+    apply const_is_rec
   · simp only [
       Part.mem_some_iff, Part.coe_some, exists_eq_left, Encodable.encodek,
       Option.some.injEq, forall_eq_apply_imp_iff, implies_true]
