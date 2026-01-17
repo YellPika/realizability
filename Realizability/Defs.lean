@@ -6,6 +6,7 @@ import Mathlib.Data.Nat.Notation
 public import Mathlib.Logic.Encodable.Basic
 public import Mathlib.Data.PFun
 public import Mathlib.Computability.Partrec
+public import Mathlib.Computability.PartrecCode
 
 /-!
 This module contains basic definitions about (semi)computable functions.
@@ -59,6 +60,21 @@ semicomputable.
 def Computable (f : A → B) : Prop :=
   Semicomputable (f : A →. B)
 
+lemma computable_iff_exists
+    (f : A → B)
+    : Computable f
+    ↔ ∃φ : ℕ →. ℕ, Nat.Partrec φ ∧ ∀k x, k ⊢ x → ∃k', φ k = .some k' ∧ k' ⊢ f x := by
+  apply Iff.intro
+  · rintro ⟨φ, h₁, h₂, h₃⟩
+    simp only [PFun.coe_val, Part.some_inj, forall_apply_eq_imp_iff] at h₂
+    use φ
+  · rintro ⟨φ, h₁, h₂⟩
+    use φ
+    · intro k x y hkx hfx
+      simp only [PFun.coe_val, Part.some_inj] at hfx
+      grind
+    · simp only [PFun.coe_val, Part.some_ne_none, IsEmpty.forall_iff, implies_true]
+
 /-- `ComputableHom A B` is the type of computable functions from `A` to `B`. -/
 structure ComputableHom (A B : Type*) [Encodable A] [Encodable B] where
   toFun : A → B
@@ -87,10 +103,73 @@ protected def copy (f : ComputableHom A B) (f' : A → B) (h : f' = ⇑f) : Comp
   toFun := f'
   computable' := h.symm ▸ f.computable'
 
-instance : Encodable (ComputableHom A B) where
-  encode := sorry
-  decode := sorry
-  encodek := sorry
+noncomputable def encode (f : ComputableHom A B) : ℕ :=
+  let φ := ((computable_iff_exists f).1 f.computable').choose
+  have hφ : Nat.Partrec φ := ((computable_iff_exists f).1 f.computable').choose_spec.1
+  have hφ' : ∃c : Nat.Partrec.Code, c.eval = φ := Nat.Partrec.Code.exists_code.1 hφ
+  Encodable.encode hφ'.choose
+
+noncomputable def decode (n : ℕ) : Option (ComputableHom A B) :=
+  (Encodable.decode n : Option Nat.Partrec.Code).bind fun c ↦
+    open Classical in
+    if hc : ∃f : A → B, ∀k x, k ⊢ x → ∃k', c.eval k = .some k' ∧ k' ⊢ f x
+    then .some {
+      toFun := hc.choose
+      computable' := by
+        use c.eval
+        · have := Nat.Partrec.Code.exists_code (f := c.eval)
+          simp only [exists_apply_eq_apply, iff_true] at this
+          exact this
+        · simp only [PFun.coe_val, Part.some_inj, forall_apply_eq_imp_iff] at ⊢ hc
+          grind
+        · simp only [PFun.coe_val, Part.some_ne_none, IsEmpty.forall_iff, implies_true]
+    }
+    else .none
+
+noncomputable instance : Encodable (ComputableHom A B) where
+  encode := encode
+  decode := decode
+  encodek f := by
+    simp only [
+      decode, encode, Denumerable.decode_eq_ofNat, Denumerable.ofNat_encode,
+      Option.bind_some, Option.dite_none_right_eq_some, Option.some.injEq]
+    have lem₁ := (computable_iff_exists f).1 f.computable'
+    have lem₂ := Nat.Partrec.Code.exists_code.1 lem₁.choose_spec.1
+    have lem₃ : ∃ g : A → B, ∀ (k : ℕ) (x : A),
+        Encodable.decode k = some x →
+        ∃ k',
+          lem₂.choose.eval k = Part.some k' ∧
+          Encodable.decode k' = some (g x) := by
+      rcases f with ⟨f, φ, h₁, h₂, h₃⟩
+      use f
+      intro k x hkx
+      simp only [lem₂.choose_spec]
+      apply lem₁.choose_spec.2 k x hkx
+    have lem₄ : Computable lem₃.choose := by
+      have := lem₃.choose_spec
+      simp only [lem₂.choose_spec] at this
+      use lem₁.choose
+      · exact lem₁.choose_spec.1
+      · simp only [PFun.coe_val, Part.some_inj, forall_apply_eq_imp_iff]
+        intro k x hkx
+        obtain h := lem₃.choose_spec k x hkx
+        simp only [lem₂.choose_spec] at h
+        exact h
+      · simp only [PFun.coe_val, Part.some_ne_none, IsEmpty.forall_iff, implies_true]
+    use lem₃
+    change ⟨lem₃.choose, lem₄⟩ = f
+    rcases f with ⟨f, hf⟩
+    simp only [mk.injEq]
+    ext x
+    obtain ⟨k, hk₁, hk₂⟩ := lem₃.choose_spec (Encodable.encode x) x (by simp only [Encodable.encodek])
+    simp only [lem₂.choose_spec] at hk₁
+    obtain ⟨h₁, h₂⟩ := lem₁.choose_spec
+    obtain ⟨i, hi₁, hi₂⟩ := h₂ (Encodable.encode x) x (by simp only [Encodable.encodek])
+    dsimp only [DFunLike.coe] at hi₂
+    simp only [hi₁, Part.some_inj] at hk₁
+    subst hk₁
+    simp only [hk₂, Option.some.injEq] at hi₂
+    exact hi₂
 
 end ComputableHom
 
