@@ -22,8 +22,8 @@ lemma semicomputable_id : Semicomputable (PFun.id A) := by
   use Part.some
   · apply Nat.Partrec.some
   · simp only [
-      PFun.id_apply, Part.mem_some_iff, exists_eq_left,
-      forall_eq_apply_imp_iff, imp_self, implies_true]
+      PFun.id_apply, Part.some_inj, exists_eq_left',
+      forall_apply_eq_imp_iff, imp_self, implies_true]
   · simp only [PFun.id_apply, Part.some_ne_none, imp_self, implies_true]
 
 @[fun_prop]
@@ -48,8 +48,8 @@ lemma semicomputable_const (x : B) : Semicomputable fun _ : A ↦ .some x := by
   · simp only [Part.coe_some]
     apply const_is_rec
   · simp only [
-      Part.mem_some_iff, Part.coe_some, exists_eq_left, Encodable.encodek,
-      Option.some.injEq, forall_eq_apply_imp_iff, implies_true]
+      Part.some_inj, Part.coe_some, exists_eq_left', Encodable.encodek,
+      Option.some.injEq, imp_self, implies_true]
   · simp only [Part.some_ne_none, Part.coe_some, imp_self, implies_true]
 
 @[fun_prop]
@@ -60,7 +60,32 @@ lemma semicomputable_comp
     {f : B →. C} (hf : Semicomputable f)
     {g : A →. B} (hg : Semicomputable g)
     : Semicomputable (f.comp g) := by
-  sorry
+  rcases hf with ⟨φf , h1f, h2f, h3f⟩
+  rcases hg with ⟨φg , h1g, h2g, h3g⟩
+  use φf.comp φg
+  · use Nat.Partrec.comp h1f h1g
+  · simp only [PFun.comp_apply]
+    intro n a c hc hfga
+    cases hga : g a using Part.induction_on with
+    | hnone => simp only [hga, Part.bind_none, Part.none_ne_some] at hfga
+    | hsome b =>
+      simp only [hga, Part.bind_some] at hfga
+      obtain ⟨m, hm₁, hm₂⟩ := h2g n a b hc hga
+      obtain ⟨k', hk'₁, hk'₂⟩ := h2f m b c hm₂ hfga
+      use k'
+      simp only [hm₁, Part.bind_some, hk'₁, hk'₂, and_self]
+  · intro n a h31 h32
+    simp only [PFun.comp_apply]
+    cases hga : g a using Part.induction_on with
+    | hnone =>
+      specialize h3g n a h31 hga
+      simp only [h3g, Part.bind_none]
+    | hsome b =>
+      obtain ⟨m, hm₁, hm₂⟩ := h2g n a b h31 hga
+      simp only [hm₁, Part.bind_some]
+      apply h3f m b hm₂
+      simp only [PFun.comp_apply, hga, Part.bind_some] at h32
+      exact h32
 
 @[fun_prop]
 lemma computable_comp

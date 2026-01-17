@@ -37,10 +37,11 @@ inductive Semicomputable (f : A →. B) : Prop
 
     -- If `k ⊢ x` and `f x` terminates, then `φ x` terminates and `φ k ⊢ f x`.
     (∀ (k : ℕ) (x : A) (y : B),
-      k ⊢ x →     -- "`k` represents `x`"
-      y ∈ f x →   -- "`y` is the result of `f x`"
-      ∃k' ∈ φ k,  -- "some `k'` is the result of `φ k`"
-        k' ⊢ y) → -- "`k'` represents `y`"
+      k ⊢ x →             -- "`k` represents `x`"
+      f x = .some y →     -- "`y` is the result of `f x`"
+      ∃k',
+        φ k = .some k' ∧  -- "some `k'` is the result of `φ k`"
+        k' ⊢ y) →         -- "`k'` represents `y`"
 
     -- If `k ⊢ x` and `f x` does not terminate, then neither does `φ k`.
     (∀ (k : ℕ) (x : A),
