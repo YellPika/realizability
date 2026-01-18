@@ -104,11 +104,76 @@ lemma computable_comp
 
 namespace Prod
 
+@[simp]
+private lemma apply_eq_bind
+    {A B : Type u}
+    (f : Part (A → B)) (x : Part A)
+    : f <*> x = Part.bind f fun f' ↦ Part.map f' x := by
+  rfl
+
+@[simp]
+private lemma bind_none
+    (x : Part A)
+    : Part.bind x (fun _ ↦ Part.none) = (Part.none : Part B) := by
+  cases x using Part.induction_on <;> simp
+
 lemma semicomputable_mk
     {f : A →. B} (hf : Semicomputable f)
     {g : A →. C} (hg : Semicomputable g)
     : Semicomputable (PFun.prodLift f g) := by
-  sorry
+  rcases hf with ⟨φf , h1f, h2f, h3f⟩
+  rcases hg with ⟨φg , h1g, h2g, h3g⟩
+  let ff := fun n => Nat.pair <$> φf n <*> φg n
+  use ff
+  · apply Nat.Partrec.pair h1f h1g
+  · intro k a ⟨p1,p2⟩  h1 h2
+    simp only [PFun.prodLift_apply] at h2
+    cases h : f a using Part.induction_on with
+    | hnone =>
+      replace h2 := congr_arg Part.Dom h2
+      simp [h] at h2
+    | hsome a' =>
+      simp only [Encodable.decode_prod_val]
+      cases h' : g a using Part.induction_on with
+      | hnone =>
+        replace h2 := congr_arg Part.Dom h2
+        simp [h'] at h2
+      | hsome a'' =>
+        rw [h] at h2
+        rw [h'] at h2
+        simp only [Part.get_some] at h2
+        let h22 := h2f k a a' h1 h
+        rcases h22 with ⟨n, ha, hb⟩
+        let h23 := h2g k a a'' h1 h'
+        rcases h23 with ⟨m, hc, hd⟩
+        use Nat.pair n m
+        simp only [Nat.unpair_pair]
+        apply And.intro
+        · simp only [Part.map_eq_map, apply_eq_bind, Part.bind_map, ha, hc, Part.map_some,
+          Part.bind_some, ff]
+        · simp only [hb, hd, Option.map_some, Option.bind_some, Option.some.injEq, Prod.mk.injEq]
+          simp only [Part.ext_iff, Part.mem_mk_iff, Part.some_dom, and_self, exists_const,
+            Part.mem_some_iff, Prod.forall, Prod.mk.injEq] at h2
+          let hhh := h2 a' a''
+          simp only [← hhh, and_self]
+  · intro k a h h2
+    have h3f1 := h3f k a h
+    have h3g1 := h3g k a h
+    cases j:f a using Part.induction_on with
+    | hnone =>
+      have t1 := h3f1 j
+      simp only [Part.map_eq_map, apply_eq_bind, Part.bind_map, t1, Part.bind_none, ff]
+    | hsome a' =>
+      simp only [Part.map_eq_map, apply_eq_bind, Part.bind_map, ff]
+      cases j':g a using Part.induction_on with
+      | hnone =>
+        have t1' := h3g1 j'
+        simp only [t1', Part.map_none, bind_none]
+      | hsome a'' =>
+        simp only [PFun.prodLift_apply] at h2
+        replace h2 := congr_arg Part.Dom h2
+        simp only [j', Part.some_dom, and_true, Part.not_none_dom, eq_iff_iff, iff_false] at h2
+        simp only [j, Part.some_dom, not_true_eq_false] at h2
 
 @[fun_prop]
 lemma computable_mk
