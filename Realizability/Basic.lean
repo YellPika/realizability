@@ -92,7 +92,15 @@ lemma computable_comp
     {f : B → C} (hf : Computable f)
     {g : A → B} (hg : Computable g)
     : Computable (f ∘ g) := by
-  sorry
+  have hc := semicomputable_comp
+      (semicomputable_of_computable hf)
+      (semicomputable_of_computable hg)
+  simp only [Computable]
+  have : (f : B →. C).comp g = (↑(f∘g) : A →.C) := by
+    ext
+    simp only [PFun.comp_apply, PFun.coe_val, Part.bind_some, Part.mem_some_iff,
+      Function.comp_apply]
+  grind
 
 namespace Prod
 
