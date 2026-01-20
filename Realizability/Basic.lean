@@ -180,7 +180,14 @@ lemma computable_mk
     {f : A → B} (hf : Computable f)
     {g : A → C} (hg : Computable g)
     : Computable (fun x ↦ (f x, g x)) := by
-  sorry
+  have hc := semicomputable_mk hf hg
+  simp only [Computable]
+  have : ((↑f : A →. B).prodLift ↑g) =  PFun.lift (fun (x : A) => (f x, g x)) := by
+    ext
+    simp only [PFun.prodLift_apply, PFun.coe_val, Part.get_some, Part.mem_mk_iff, Part.some_dom,
+      and_self, exists_const, Part.mem_some_iff]
+    grind
+  grind
 
 lemma semicomputable_fst : Semicomputable (↑(Prod.fst : A × B → A) : A × B →. A) := by
   sorry
