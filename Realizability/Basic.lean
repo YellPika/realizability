@@ -212,7 +212,21 @@ lemma computable_fst : Computable (Prod.fst : A × B → A) := by
   exact semicomputable_fst
 
 lemma semicomputable_snd : Semicomputable (↑(Prod.snd : A × B → B) : A × B →. B) := by
-  sorry
+  let ff := PFun.lift fun n => (Nat.unpair n).snd
+  use ff
+  · apply Nat.Partrec.right
+  · intro n ab a h h2
+    simp only [PFun.lift, Part.some_inj] at h2
+    simp only [PFun.coe_val, Part.some_inj, exists_eq_left', ff]
+    subst h2
+    simp only [Encodable.decode_prod_val] at h
+    cases h3:(Encodable.decode (Nat.unpair n).1 : Option A) with
+    | none => simp only [h3, Option.bind_none, reduceCtorEq] at h
+    | some val =>
+      simp only [h3, Option.bind_some, Option.map_eq_some_iff] at h
+      grind
+  · intro n ab h h2
+    simp only [PFun.coe_val, Part.some_ne_none] at h2
 
 @[fun_prop]
 lemma computable_snd : Computable (Prod.snd : A × B → B) := by
