@@ -137,7 +137,7 @@ lemma semicomputable_mk
       cases h' : g a using Part.induction_on with
       | hnone =>
         replace h2 := congr_arg Part.Dom h2
-        simp [h'] at h2
+        simp only [h', Part.not_none_dom, and_false, Part.some_dom, eq_iff_iff, iff_true] at h2
       | hsome a'' =>
         rw [h] at h2
         rw [h'] at h2
@@ -190,7 +190,22 @@ lemma computable_mk
   grind
 
 lemma semicomputable_fst : Semicomputable (↑(Prod.fst : A × B → A) : A × B →. A) := by
-  sorry
+  let ff := PFun.lift fun n => (Nat.unpair n).fst
+  use ff
+  · apply Nat.Partrec.left
+  · intro n ab a h h2
+    simp only [PFun.lift, Part.some_inj] at h2
+    simp only [PFun.coe_val, Part.some_inj, exists_eq_left', ff]
+    subst h2
+    simp only [Encodable.decode_prod_val] at h
+    cases h3:(Encodable.decode (Nat.unpair n).1 : Option A) with
+    | none => simp only [h3, Option.bind_none, reduceCtorEq] at h
+    | some val =>
+      simp only [h3, Option.bind_some, Option.map_eq_some_iff] at h
+      simp only [Option.some.injEq]
+      grind
+  · intro n ab h h2
+    simp only [PFun.coe_val, Part.some_ne_none] at h2
 
 @[fun_prop]
 lemma computable_fst : Computable (Prod.fst : A × B → A) := by
