@@ -234,6 +234,32 @@ lemma computable_snd : Computable (Prod.snd : A × B → B) := by
 
 end Prod
 
+namespace Sum
+
+@[simp]
+lemma semicomputable_inl : Semicomputable (↑(Sum.inl : A → A ⊕ B) : A →. A ⊕ B) := by
+  use ↑(fun x ↦ 2 * x : ℕ → ℕ)
+  · sorry -- This is hard!
+  · sorry
+  · sorry
+
+@[fun_prop, simp]
+lemma computable_inl : Computable (Sum.inl : A → A ⊕ B) := by
+  apply semicomputable_inl
+
+@[simp]
+lemma semicomputable_inr : Semicomputable (↑(Sum.inr : B → A ⊕ B) : B →. A ⊕ B) := by
+  use ↑(fun x ↦ 2 * x + 1 : ℕ → ℕ)
+  · sorry -- This is hard!
+  · sorry
+  · sorry
+
+@[fun_prop, simp]
+lemma computable_inr : Computable (Sum.inr : B → A ⊕ B) := by
+  apply semicomputable_inr
+
+end Sum
+
 namespace ComputableHom
 
 @[ext]
