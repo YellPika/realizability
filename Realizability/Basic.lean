@@ -250,9 +250,16 @@ lemma computable_inl : Computable (Sum.inl : A → A ⊕ B) := by
 @[simp]
 lemma semicomputable_inr : Semicomputable (↑(Sum.inr : B → A ⊕ B) : B →. A ⊕ B) := by
   use ↑(fun x ↦ 2 * x + 1 : ℕ → ℕ)
-  · sorry -- This is hard!
   · sorry
-  · sorry
+  · intro n b ab h h2
+    simp only [PFun.coe_val, Part.some_inj, Encodable.decode_sum_val, exists_eq_left']
+    simp only [PFun.lift, Part.some_inj] at h2
+    simp only [Encodable.decodeSum, Nat.boddDiv2_eq, Nat.bodd_succ, Nat.bodd_mul, Nat.bodd_zero,
+      Bool.not_false, Bool.not_true, Bool.false_and, Nat.div2_succ, Nat.div2_bit0,
+      Nat.succ_eq_add_one, cond_false, h, Option.map_some, Option.some.injEq]
+    exact h2
+  · intro n b h h2
+    simp only [PFun.coe_val, Part.some_ne_none] at h2
 
 @[fun_prop, simp]
 lemma computable_inr : Computable (Sum.inr : B → A ⊕ B) := by
